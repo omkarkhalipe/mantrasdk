@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 
@@ -16,7 +18,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
+  String _platformVersion = '';
 
   @override
   void initState() {
@@ -50,6 +52,11 @@ class _MyAppState extends State<MyApp> {
     try {
       _platformVersion =
           await Mantrasdk.getFinger ?? 'Unknown platform version';
+
+      setState(() {
+        _platformVersion;
+      });
+      Clipboard.setData(ClipboardData(text: _platformVersion));
     } on PlatformException {
       String platformVersion = 'Failed to get platform version.';
     }
@@ -69,7 +76,9 @@ class _MyAppState extends State<MyApp> {
         body: Center(
           child: Column(
             children: [
-              Text('Running on: $_platformVersion\n'),
+              _platformVersion == ""
+                  ? Text('Running on:')
+                  : Image.memory(base64Decode(_platformVersion)),
               FlatButton(
                   onPressed: () {
                     getFinger();
