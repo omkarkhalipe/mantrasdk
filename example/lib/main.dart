@@ -50,8 +50,8 @@ class _MyAppState extends State<MyApp> {
 
   getFinger() async {
     try {
-      _platformVersion =
-          await Mantrasdk.getFinger ?? 'Unknown platform version';
+      _platformVersion = "data:image/png;base64," +
+          (await Mantrasdk.getFinger ?? 'Unknown platform version');
 
       setState(() {
         _platformVersion;

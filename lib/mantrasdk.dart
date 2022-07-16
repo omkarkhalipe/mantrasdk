@@ -1,4 +1,3 @@
-
 import 'dart:async';
 
 import 'package:flutter/services.dart';
@@ -13,8 +12,8 @@ class Mantrasdk {
   }
 
   static Future<String?> get getFinger async {
-    await _channel.invokeMethod('getFinger');
-    final String? version = "iPhone";
+    final String? version = await _channel.invokeMethod('getFinger');
+    print("return value "+version!);
     return version;
   }
 }

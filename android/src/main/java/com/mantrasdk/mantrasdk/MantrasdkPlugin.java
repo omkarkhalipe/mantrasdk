@@ -10,7 +10,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-
+import java.io.ByteArrayOutputStream;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
@@ -19,6 +19,7 @@ import io.flutter.plugin.common.MethodChannel.Result;
 import com.mantra.mfs100.FingerData;
 import com.mantra.mfs100.MFS100;
 import com.mantra.mfs100.MFS100Event;
+
 /** MantrasdkPlugin */
 public class MantrasdkPlugin implements FlutterPlugin, MethodCallHandler, MFS100Event {
   /// The MethodChannel that will the communication between Flutter and native
@@ -80,12 +81,9 @@ public class MantrasdkPlugin implements FlutterPlugin, MethodCallHandler, MFS100
       result.success("Ansdroid " + android.os.Build.VERSION.RELEASE);
     } else if (call.method.equals("invokeCapture")) {
       capture();
-    }
-    else if(call.method.equals("getFinger"))
-    {
+    } else if (call.method.equals("getFinger")) {
       getFinger();
-    }
-    else {
+    } else {
       result.notImplemented();
     }
   }
@@ -144,8 +142,7 @@ public class MantrasdkPlugin implements FlutterPlugin, MethodCallHandler, MFS100
 
   }
 
-  void getFinger()
-  {
+  void getFinger() {
     if (!isCaptureRunning) {
       StartSyncCapture();
     }
@@ -155,28 +152,27 @@ public class MantrasdkPlugin implements FlutterPlugin, MethodCallHandler, MFS100
 
     scannerAction = ScannerAction.Capture;
 
-
   }
 
   private void SetTextOnUIThread(final String str) {
 
-    handler.post(
-            new Runnable() {
-              @Override
-              public void run() {
-                Toast.makeText(context, str, Toast.LENGTH_LONG).show();
-              }
-            });
+    // handler.post(
+    // new Runnable() {
+    // @Override
+    // public void run() {
+    // Toast.makeText(context, str, Toast.LENGTH_LONG).show();
+    // }
+    // });
 
   }
 
   private void showSuccessLog(String key) {
     SetTextOnUIThread("Init success");
     String info = "\nKey: " + key + "\nSerial: "
-            + mfs100.GetDeviceInfo().SerialNo() + " Make: "
-            + mfs100.GetDeviceInfo().Make() + " Model: "
-            + mfs100.GetDeviceInfo().Model()
-            + "\nCertificate: " + mfs100.GetCertification();
+        + mfs100.GetDeviceInfo().SerialNo() + " Make: "
+        + mfs100.GetDeviceInfo().Make() + " Model: "
+        + mfs100.GetDeviceInfo().Model()
+        + "\nCertificate: " + mfs100.GetCertification();
     SetTextOnUIThread(info);
   }
 
@@ -188,14 +184,14 @@ public class MantrasdkPlugin implements FlutterPlugin, MethodCallHandler, MFS100
       } else {
         SetTextOnUIThread("Init success");
         String info = "Serial: " + mfs100.GetDeviceInfo().SerialNo()
-                + " Make: " + mfs100.GetDeviceInfo().Make()
-                + " Model: " + mfs100.GetDeviceInfo().Model()
-                + "\nCertificate: " + mfs100.GetCertification();
+            + " Make: " + mfs100.GetDeviceInfo().Make()
+            + " Model: " + mfs100.GetDeviceInfo().Model()
+            + "\nCertificate: " + mfs100.GetCertification();
         SetTextOnUIThread(info);
       }
     } catch (Exception ex) {
       Toast.makeText(context, "Init failed, unhandled exception",
-              Toast.LENGTH_LONG).show();
+          Toast.LENGTH_LONG).show();
       SetTextOnUIThread("Init failed, unhandled exception");
     }
   }
@@ -213,28 +209,32 @@ public class MantrasdkPlugin implements FlutterPlugin, MethodCallHandler, MFS100
           int ret = mfs100.AutoCapture(fingerData, timeout, true);
           Log.e("StartSyncCapture.RET", "" + ret);
           if (ret != 0) {
-            SetTextOnUIThread("Inside error "+mfs100.GetErrorMsg(ret));
+            SetTextOnUIThread("Inside error " + mfs100.GetErrorMsg(ret));
           } else {
             lastCapFingerData = fingerData;
             final Bitmap bitmap = BitmapFactory.decodeByteArray(fingerData.FingerImage(), 0,
-                    fingerData.FingerImage().length);
+                fingerData.FingerImage().length);
 
-            extractWSQImage();
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream);
+
+            response.success(Base64.encodeToString(outputStream.toByteArray(), Base64.DEFAULT));
+            // extractWSQImage();
 
             SetTextOnUIThread("Capture Success");
             String log = "\nQuality: " + fingerData.Quality()
-                    + "\nNFIQ: " + fingerData.Nfiq()
-                    + "\nWSQ Compress Ratio: "
-                    + fingerData.WSQCompressRatio()
-                    + "\nImage Dimensions (inch): "
-                    + fingerData.InWidth() + "\" X "
-                    + fingerData.InHeight() + "\""
-                    + "\nImage Area (inch): " + fingerData.InArea()
-                    + "\"" + "\nResolution (dpi/ppi): "
-                    + fingerData.Resolution() + "\nGray Scale: "
-                    + fingerData.GrayScale() + "\nBits Per Pixal: "
-                    + fingerData.Bpp() + "\nWSQ Info: "
-                    + fingerData.WSQInfo();
+                + "\nNFIQ: " + fingerData.Nfiq()
+                + "\nWSQ Compress Ratio: "
+                + fingerData.WSQCompressRatio()
+                + "\nImage Dimensions (inch): "
+                + fingerData.InWidth() + "\" X "
+                + fingerData.InHeight() + "\""
+                + "\nImage Area (inch): " + fingerData.InArea()
+                + "\"" + "\nResolution (dpi/ppi): "
+                + fingerData.Resolution() + "\nGray Scale: "
+                + fingerData.GrayScale() + "\nBits Per Pixal: "
+                + fingerData.Bpp() + "\nWSQ Info: "
+                + fingerData.WSQInfo();
             SetTextOnUIThread(log);
 
           }
@@ -291,12 +291,12 @@ public class MantrasdkPlugin implements FlutterPlugin, MethodCallHandler, MFS100
         Log.e("base64FingerString", base64FingerString);
         response.success(base64FingerString);
         handler.post(
-                new Runnable() {
-                  @Override
-                  public void run() {
-                    channel.invokeMethod("onCapture", base64FingerString);
-                  }
-                });
+            new Runnable() {
+              @Override
+              public void run() {
+                channel.invokeMethod("onCapture", base64FingerString);
+              }
+            });
 
       }
     } catch (Exception e) {
